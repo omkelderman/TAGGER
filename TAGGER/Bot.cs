@@ -29,12 +29,6 @@ namespace TAGGER
 
         static async Task Init()
         {
-            discord.MessageCreated += async e =>
-            {
-                if (e.Message.Content.ToLower().StartsWith("ping"))
-                    await e.Message.RespondAsync("pong!");
-            };
-
             Console.WriteLine("Connected!");
 
             await discord.ConnectAsync();
