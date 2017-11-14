@@ -26,5 +26,18 @@ namespace TAGGER.Commands
                 await TAGGER.Commands.NSFW.Remove(ctx, role);
             }
         }
+
+        [Command("calculate")]
+        public async Task Calculate(CommandContext ctx, string argument = "", int tag = 4)
+        {
+            if (argument == "")
+            {
+                await ctx.RespondAsync(ctx.Member.Mention + " please use `!calculate {beatmap link} [player count (default = 4)]` to calculate the beatmap star rating in TAG mode.");
+            }
+            else
+            {
+                await TAGGER.Commands.Calculate.SR(ctx, argument, tag);
+            }
+        }
     }
 }
