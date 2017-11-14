@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Diagnostics;
-using System.Net;
+using System.IO;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 using DSharpPlus.CommandsNext;
-using Newtonsoft.Json.Linq;
 
 namespace TAGGER.Commands
 {
     class Calculate
     {
+        private static Process proc;
+
         public static string GetOsuFile(string link)
         {
             string cleanlink = link;
@@ -26,12 +28,12 @@ namespace TAGGER.Commands
         {
             JObject json;
             string line = "";
-            var proc = new Process
+            proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "oppai.exe",
-                    Arguments = "Temp/" + id + " -ojson",
+                    Arguments = $"Temp/{id} -ojson",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -47,12 +49,12 @@ namespace TAGGER.Commands
         }
         public static async Task Curl(string link, string id)
         {
-            var proc = new Process
+            proc = new Process
             {
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "curl.exe",
-                    Arguments = link + " -o Temp/" + id,
+                    Arguments = $"{link} -o Temp/{id}",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -67,18 +69,21 @@ namespace TAGGER.Commands
             string osulink = GetOsuFile(link);
             JObject json;
             double stars;
-            if (osulink.Contains("http://osu.ppy.sh"))
+            if (osulink.Contains("http://osu.ppy.sh") && !osulink.Contains("/s/"))
             {
                 id = osulink.Substring(22);
                 await Curl(osulink, id);
+                proc.WaitForExit();
                 json = Oppai(id);
+                proc.WaitForExit();
                 stars = Convert.ToDouble(json.GetValue("stars"));
                 stars = Math.Round(stars, 2);
-                await ctx.RespondAsync(ctx.Member.Mention + " the amount of stars for the given beatmap with " + tag + " player(s) is " + stars + "");
+                File.Delete($"Temp/{id}");
+                await ctx.RespondAsync($"{ctx.Member.Mention} the amount of stars for the given beatmap with {tag} player(s) is {stars}*");
             }
             else
             {
-                await ctx.RespondAsync(ctx.Member.Mention + " the link you have provided is not a beatmap or invalid.");
+                await ctx.RespondAsync($"{ctx.Member.Mention} the link you have provided is not a beatmap or invalid.");
             }
         }
     }

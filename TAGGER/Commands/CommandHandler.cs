@@ -15,7 +15,7 @@ namespace TAGGER.Commands
             var role = ctx.Guild.Roles.FirstOrDefault(x => x.Name == "NSFW");
             if (argument != "add" && argument != "remove")
             {
-                await ctx.RespondAsync(ctx.Member.Mention + " please use either `!nsfw add` or `!nsfw remove` to recieve/remove the NSFW role.");
+                await ctx.RespondAsync($"{ctx.Member.Mention} please use either `!nsfw add` or `!nsfw remove` to recieve/remove the NSFW role.");
             }
             else if (argument == "add")
             {
@@ -32,7 +32,7 @@ namespace TAGGER.Commands
         {
             if (argument == "")
             {
-                await ctx.RespondAsync(ctx.Member.Mention + " please use `!calculate {beatmap link} [player count (default = 4)]` to calculate the beatmap star rating in TAG mode.");
+                await ctx.RespondAsync($"{ctx.Member.Mention} please use `!calculate {{beatmap link}} [player count (default = 4)]` to calculate the beatmap star rating in TAG mode.");
             }
             else
             {
