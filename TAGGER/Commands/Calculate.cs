@@ -2,9 +2,12 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 
 using DSharpPlus.CommandsNext;
+
+using TAGGER.Utils;
 
 namespace TAGGER.Commands
 {
@@ -12,10 +15,27 @@ namespace TAGGER.Commands
     {
         private static Process proc;
 
+        public static double Sum(double[] starList)
+        {
+            double result = 0;
+            for (int i = 0; i < starList.Length; i++)
+            {
+                result += starList[i];
+            }
+            return result;
+        }
+
+        public static double Average(double[] avgStars)
+        {
+            double sum = Sum(avgStars);
+            double result = (double)sum / avgStars.Length;
+            return result;
+        }
+
         public static string GetOsuFile(string link)
         {
             string cleanlink = link;
-            if (link.Contains("&m="))
+            if (link.Contains("&m=") || link.Contains("?m="))
             {
                 cleanlink = link.Remove(link.Length - 4);
             }
@@ -24,7 +44,7 @@ namespace TAGGER.Commands
             return finallink;
         }
 
-        public static JObject Oppai(string id)
+        public static JObject Oppai(string name)
         {
             JObject json;
             string line = "";
@@ -33,7 +53,7 @@ namespace TAGGER.Commands
                 StartInfo = new ProcessStartInfo
                 {
                     FileName = "oppai.exe",
-                    Arguments = $"Temp/{id} -ojson",
+                    Arguments = $"Temp/{name} -ojson",
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     CreateNoWindow = true
@@ -47,7 +67,7 @@ namespace TAGGER.Commands
             json = JObject.Parse(line);
             return json;
         }
-        public static async Task Curl(string link, string id)
+        public static void Curl(string link, string id)
         {
             proc = new Process
             {
@@ -68,17 +88,36 @@ namespace TAGGER.Commands
             string id;
             string osulink = GetOsuFile(link);
             JObject json;
-            double stars;
+            double stars = 0;
             if (osulink.Contains("http://osu.ppy.sh") && !osulink.Contains("/s/"))
             {
                 id = osulink.Substring(22);
-                await Curl(osulink, id);
+                Curl(osulink, id);
                 proc.WaitForExit();
-                json = Oppai(id);
-                proc.WaitForExit();
-                stars = Convert.ToDouble(json.GetValue("stars"));
-                stars = Math.Round(stars, 2);
-                File.Delete($"Temp/{id}");
+                if (tag != 1 || tag != 0)
+                {
+                    List<double> tagStarsList = new List<double>();
+                    SplitMap.Split(tag, id);
+                    for (int i = 0; i < tag; i++)
+                    {
+                        json = Oppai($"{id}_{i}");
+                        proc.WaitForExit();
+                        stars = Convert.ToDouble(json.GetValue("stars"));
+                        tagStarsList.Add(stars);
+                        File.Delete($"Temp/{id}_{i}");
+                    }
+                    double[] tagStars = tagStarsList.ToArray();
+                    stars = Math.Round(Average(tagStars), 2);
+                    File.Delete($"Temp/{id}");
+                }
+                else
+                {
+                    json = Oppai(id);
+                    proc.WaitForExit();
+                    stars = Convert.ToDouble(json.GetValue("stars"));
+                    stars = Math.Round(stars, 2);
+                    File.Delete($"Temp/{id}");
+                }
                 await ctx.RespondAsync($"{ctx.Member.Mention} the amount of stars for the given beatmap with {tag} player(s) is {stars}*");
             }
             else
