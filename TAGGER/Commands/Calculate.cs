@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 using DSharpPlus.CommandsNext;
@@ -34,10 +35,20 @@ namespace TAGGER.Commands
 
         public static string GetOsuFile(string link)
         {
-            string cleanlink = link;
-            if (link.Contains("&m=") || link.Contains("?m="))
+            string newlink = link;
+
+            if (link.Contains("/beatmapsets/"))
             {
-                cleanlink = link.Remove(link.Length - 4);
+                link = link.Replace("/beatmapsets/", "/b[eatmapsets/").Replace("/#osu/", "/#osu]/");
+                string regex = "(\\[.*\\])";
+                newlink = Regex.Replace(link, regex, "");
+                Console.WriteLine(link);
+            }
+
+            string cleanlink = newlink;
+            if (newlink.Contains("&m=") || newlink.Contains("?m="))
+            {
+                cleanlink = newlink.Remove(newlink.Length - 4);
             }
             string finallink = cleanlink.Replace("/b/", "/osu/");
             finallink = finallink.Replace("https://", "http://");

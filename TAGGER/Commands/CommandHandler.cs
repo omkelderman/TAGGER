@@ -32,11 +32,14 @@ namespace TAGGER.Commands
         {
             if (argument == "")
             {
-                await ctx.RespondAsync($"{ctx.Member.Mention} please use `!calculate {{beatmap link}} [player count (default = 4)]` to calculate the beatmap star rating in TAG mode.");
+                await ctx.RespondAsync($"{ctx.Member.Mention} please use `!calculate {{beatmap link}} [player count (default = 4, max = 32)]` to calculate the beatmap star rating in TAG mode.");
             }
             else
             {
-                await TAGGER.Commands.Calculate.SR(ctx, argument, tag);
+                if (tag <= 32)
+                {
+                    await TAGGER.Commands.Calculate.SR(ctx, argument, tag);
+                }
             }
         }
     }
