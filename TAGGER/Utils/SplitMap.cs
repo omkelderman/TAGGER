@@ -97,8 +97,6 @@ namespace TAGGER.Utils
                     }
                 }
 
-                Console.WriteLine("Closing StreamWriters");
-
                 for (int j = 0; j < player.Length; j++)
                 {
                     player[j].Close();

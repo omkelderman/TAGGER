@@ -4,8 +4,10 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using System.Linq;
 using Newtonsoft.Json.Linq;
 
+using DSharpPlus.Entities;
 using DSharpPlus.CommandsNext;
 
 using TAGGER.Utils;
@@ -16,23 +18,6 @@ namespace TAGGER.Commands
     {
         private static Process proc;
 
-        public static double Sum(double[] starList)
-        {
-            double result = 0;
-            for (int i = 0; i < starList.Length; i++)
-            {
-                result += starList[i];
-            }
-            return result;
-        }
-
-        public static double Average(double[] avgStars)
-        {
-            double sum = Sum(avgStars);
-            double result = (double)sum / avgStars.Length;
-            return result;
-        }
-
         public static string GetOsuFile(string link)
         {
             string newlink = link;
@@ -42,7 +27,6 @@ namespace TAGGER.Commands
                 link = link.Replace("beatmapsets", "b[eatmapsets").Replace("#osu", "#osu]");
                 string regex = "(\\[.*\\])";
                 newlink = Regex.Replace(link, regex, "");
-                Console.WriteLine(link);
             }
 
             string cleanlink = newlink;
@@ -96,44 +80,60 @@ namespace TAGGER.Commands
 
         public async static Task SR(CommandContext ctx, string link, int tag)
         {
-            string id;
-            string osulink = GetOsuFile(link);
-            JObject json;
-            double stars = 0;
-            if (osulink.Contains("http://osu.ppy.sh") && !osulink.Contains("/s/"))
+            try
             {
-                id = osulink.Substring(22);
-                Curl(osulink, id);
-                proc.WaitForExit();
-                if (tag != 1 || tag != 0)
+                string id;
+                string osulink = GetOsuFile(link);
+                JObject json;
+                double stars = 0;
+                DiscordEmbedBuilder playerStars = new DiscordEmbedBuilder();
+                if (osulink.Contains("http://osu.ppy.sh") && !osulink.Contains("/s/"))
                 {
-                    List<double> tagStarsList = new List<double>();
-                    SplitMap.Split(tag, id);
-                    for (int i = 0; i < tag; i++)
+                    id = osulink.Substring(22);
+                    Curl(osulink, id);
+                    proc.WaitForExit();
+                    if (tag != 1 || tag != 0)
                     {
-                        json = Oppai($"{id}_{i}");
+                        List<double> tagStarsList = new List<double>();
+                        SplitMap.Split(tag, id);
+                        for (int i = 0; i < tag; i++)
+                        {
+                            json = Oppai($"{id}_{i}");
+                            proc.WaitForExit();
+                            stars = Convert.ToDouble(json.GetValue("stars"));
+                            tagStarsList.Add(stars);
+                            File.Delete($"Temp/{id}_{i}");
+                        }
+                        double[] tagStars = tagStarsList.ToArray();
+                        for (int i = 0; i < tag; i++)
+                        {
+                            int j = i + 1;
+                            playerStars.AddField("Player " + j, Math.Round(tagStars[i], 2).ToString(), true);
+                        }
+                        playerStars.WithFooter("Provided by http://tag.tayo.ws/");
+                        stars = Math.Round(tagStars.Average(), 2);
+                        File.Delete($"Temp/{id}");
+                    }
+                    else
+                    {
+                        json = Oppai(id);
                         proc.WaitForExit();
                         stars = Convert.ToDouble(json.GetValue("stars"));
-                        tagStarsList.Add(stars);
-                        File.Delete($"Temp/{id}_{i}");
+                        stars = Math.Round(stars, 2);
+                        File.Delete($"Temp/{id}");
                     }
-                    double[] tagStars = tagStarsList.ToArray();
-                    stars = Math.Round(Average(tagStars), 2);
-                    File.Delete($"Temp/{id}");
+                    await ctx.RespondAsync($"{ctx.Member.Mention} the amount of stars for the given beatmap with {tag} player(s) is {stars}*");
+                    if (tag != 1 || tag != 0)
+                        await ctx.RespondAsync(null, false, playerStars);
                 }
                 else
                 {
-                    json = Oppai(id);
-                    proc.WaitForExit();
-                    stars = Convert.ToDouble(json.GetValue("stars"));
-                    stars = Math.Round(stars, 2);
-                    File.Delete($"Temp/{id}");
+                    await ctx.RespondAsync($"{ctx.Member.Mention} the link you have provided is not a beatmap or invalid.");
                 }
-                await ctx.RespondAsync($"{ctx.Member.Mention} the amount of stars for the given beatmap with {tag} player(s) is {stars}*");
             }
-            else
+            catch(Exception e)
             {
-                await ctx.RespondAsync($"{ctx.Member.Mention} the link you have provided is not a beatmap or invalid.");
+                Console.WriteLine(e);
             }
         }
     }
