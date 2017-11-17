@@ -37,9 +37,9 @@ namespace TAGGER.Commands
         {
             string newlink = link;
 
-            if (link.Contains("/beatmapsets/"))
+            if (link.Contains("beatmapsets"))
             {
-                link = link.Replace("/beatmapsets/", "/b[eatmapsets/").Replace("/#osu/", "/#osu]/");
+                link = link.Replace("beatmapsets", "b[eatmapsets").Replace("#osu", "#osu]");
                 string regex = "(\\[.*\\])";
                 newlink = Regex.Replace(link, regex, "");
                 Console.WriteLine(link);
